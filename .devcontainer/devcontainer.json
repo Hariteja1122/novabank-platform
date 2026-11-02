@@ -1,0 +1,41 @@
+{
+  "name": "NovaBank full stack",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": { "version": "none", "installMaven": "true" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": { "cpus": 4, "memory": "16gb", "storage": "32gb" },
+  "forwardPorts": [4200, 8080, 8081, 8082, 8083, 50000],
+  "portsAttributes": {
+    "4200": { "label": "NovaBank UI", "onAutoForward": "openBrowser" },
+    "8080": { "label": "API gateway" },
+    "8081": { "label": "auth-service" },
+    "8082": { "label": "account-service" },
+    "8083": { "label": "transaction-service" },
+    "50000": { "label": "Db2" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash dev.sh up",
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "YOUR_GITHUB_USER/novabank-auth-service": { "permissions": { "contents": "write" } },
+        "YOUR_GITHUB_USER/novabank-account-service": { "permissions": { "contents": "write" } },
+        "YOUR_GITHUB_USER/novabank-transaction-service": { "permissions": { "contents": "write" } },
+        "YOUR_GITHUB_USER/novabank-api-gateway": { "permissions": { "contents": "write" } },
+        "YOUR_GITHUB_USER/novabank-ui": { "permissions": { "contents": "write" } }
+      }
+    },
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "angular.ng-template",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}
