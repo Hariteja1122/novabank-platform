@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/accounts/100245180057"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("status is 404", () => pm.response.to.have.status(404));
+    language: text/javascript
+order: 3000

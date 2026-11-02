@@ -8,7 +8,7 @@ This repo holds everything that is not a service: the IBM Db2 schema and sample 
 one command local environment, the GCP environment setup, the Postman / Hoppscotch
 collection and the IDE guide.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/YOUR_GITHUB_USER/novabank-platform)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Hariteja1122/novabank-platform)
 
 ## The six repos
 

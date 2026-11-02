@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Idempotency-Key: "{{lastIdempotencyKey}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fromAccount": "{{fromAccount}}",
+      "toAccount": "{{toAccount}}",
+      "amount": 25.0,
+      "description": "Postman test"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("status is 201", () => pm.response.to.have.status(201));
+      pm.test("same reference returned", () => pm.expect(pm.response.json().reference).to.eql(pm.collectionVariables.get("reference")));
+    language: text/javascript
+order: 2000

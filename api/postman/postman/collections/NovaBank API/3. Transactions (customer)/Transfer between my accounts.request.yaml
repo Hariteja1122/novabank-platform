@@ -1,0 +1,33 @@
+$kind: http-request
+description: Pre-request script makes a fresh Idempotency-Key. Use 'Replay same transfer' to prove it is not charged twice.
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Idempotency-Key: "{{idempotencyKey}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fromAccount": "{{fromAccount}}",
+      "toAccount": "{{toAccount}}",
+      "amount": 25.0,
+      "description": "Postman test"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const key = pm.variables.replaceIn("{{$guid}}");
+      pm.collectionVariables.set("idempotencyKey", key);
+      pm.collectionVariables.set("lastIdempotencyKey", key);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("status is 201", () => pm.response.to.have.status(201));
+      pm.collectionVariables.set("reference", pm.response.json().reference);
+    language: text/javascript
+order: 1000

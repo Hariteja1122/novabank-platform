@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/accounts"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("status is 200", () => pm.response.to.have.status(200));
+      const list = pm.response.json();
+      if (list.length) pm.collectionVariables.set("fromAccount", list[0].accountNumber);
+      if (list.length > 1) pm.collectionVariables.set("toAccount", list[1].accountNumber);
+    language: text/javascript
+order: 1000

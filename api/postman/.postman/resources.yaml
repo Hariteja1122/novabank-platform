@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: 0eef7479-ae24-4f72-8a42-70fdb0d74674
+
+localResources:
+  collections:
+    - ../NovaBank.postman_collection.json
+  environments:
+    - ../NovaBank-dev.postman_environment.json
+    - ../NovaBank-local.postman_environment.json
+    - ../NovaBank-preprod.postman_environment.json
+
+cloudResources:
+  collections:
+    ../postman/collections/NovaBank API: 9c79e243-e45f-4444-98ff-616f010bb3af

@@ -1,0 +1,24 @@
+$kind: http-request
+description: Stores the JWT in the collection variable `token`. Run this first.
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{customerEmail}}",
+      "password": "{{customerPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("status is 200", () => pm.response.to.have.status(200));
+      const b = pm.response.json();
+      pm.collectionVariables.set("token", b.token);
+      pm.collectionVariables.set("customerId", b.user.id);
+    language: text/javascript
+order: 1000

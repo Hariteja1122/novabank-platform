@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Idempotency-Key: "{{$guid}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fromAccount": "{{fromAccount}}",
+      "toAccount": "{{toAccount}}",
+      "amount": 10000.01
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("status is 400", () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 4000

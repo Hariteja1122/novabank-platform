@@ -1,0 +1,18 @@
+$kind: collection
+description: |-
+  Every NovaBank endpoint through the API gateway. Works in Postman and Hoppscotch (Hoppscotch: Collections > Import > Postman collection).
+
+  Run '1. Auth > Login' requests first; they store the tokens. Pick the local, dev or preprod environment for baseUrl.
+variables:
+  token: ""
+  adminToken: ""
+  customerId: ""
+  fromAccount: "100245180031"
+  toAccount: "100245180049"
+  reference: ""
+  idempotencyKey: ""
+  lastIdempotencyKey: ""
+  customerEmail: john.carter@example.com
+  customerPassword: Password@123
+  adminEmail: admin@novabank.dev
+  adminPassword: Admin@123

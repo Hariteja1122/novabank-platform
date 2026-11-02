@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "Alex Morgan",
+      "email": "alex.{{$timestamp}}@example.com",
+      "phone": "+1 248 555 0199",
+      "password": "Password@123"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: pm.test("status is 201", () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 3000

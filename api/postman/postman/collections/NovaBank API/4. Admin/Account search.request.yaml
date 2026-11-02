@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/accounts?status=ACTIVE&q="
+method: GET
+queryParams:
+  status: ACTIVE
+  q: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminToken}}"
+scripts:
+  - type: afterResponse
+    code: pm.test("status is 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 6000

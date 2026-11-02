@@ -22,11 +22,11 @@
   "customizations": {
     "codespaces": {
       "repositories": {
-        "YOUR_GITHUB_USER/novabank-auth-service": { "permissions": { "contents": "write" } },
-        "YOUR_GITHUB_USER/novabank-account-service": { "permissions": { "contents": "write" } },
-        "YOUR_GITHUB_USER/novabank-transaction-service": { "permissions": { "contents": "write" } },
-        "YOUR_GITHUB_USER/novabank-api-gateway": { "permissions": { "contents": "write" } },
-        "YOUR_GITHUB_USER/novabank-ui": { "permissions": { "contents": "write" } }
+        "Hariteja1122/novabank-auth-service": { "permissions": { "contents": "write" } },
+        "Hariteja1122/novabank-account-service": { "permissions": { "contents": "write" } },
+        "Hariteja1122/novabank-transaction-service": { "permissions": { "contents": "write" } },
+        "Hariteja1122/novabank-api-gateway": { "permissions": { "contents": "write" } },
+        "Hariteja1122/novabank-ui": { "permissions": { "contents": "write" } }
       }
     },
     "vscode": {
