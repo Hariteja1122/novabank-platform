@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="NovaBank - all" type="CompoundRunConfigurationType">
+    <toRun name="API Gateway (local)" type="Application" />
+    <toRun name="Account Service (local)" type="Application" />
+    <toRun name="Auth Service (local)" type="Application" />
+    <toRun name="Transaction Service (local)" type="Application" />
+    <toRun name="NovaBank UI (local)" type="js.build_tools.npm" />
+    <method v="2" />
+  </configuration>
+</component>
