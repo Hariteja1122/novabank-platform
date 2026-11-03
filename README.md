@@ -88,23 +88,35 @@ db2 -tvf db2/schema/02-sample-data.sql
 
 ## Audit log
 
-Each service records every state-changing request in its own `AUDIT_LOG` table (`NB_AUTH`, `NB_ACCT`,
-`NB_TXN`): who did it, the action, the target, success or failure with the HTTP status and reason, a few
-whitelisted details (for example old and new status), the correlation id and the source address.
+One central audit trail, `NB_AUTH.AUDIT_LOG`, owned by auth-service. Every state-changing request is recorded,
+successful or not: who did it, the action, the target, the outcome with HTTP status and reason, a few
+whitelisted details (for example old and new status, or the deposit amount), the correlation id, the source
+address and which service reported it.
 
-* Successful reads (page views, searches, `GET` requests) are never recorded.
-* Failed sign-ins record the email that was tried and why (`Unknown email`, `Wrong password`,
-  `Profile is locked`, or the validation error). No part of a password is ever stored, and request bodies
-  are never stored.
+```
+auth-service ──────────────────────────────── writes directly ──┐
+account-service     ── POST /internal/audit (X-Internal-Api-Key) ─┼─> NB_AUTH.AUDIT_LOG
+transaction-service ── POST /internal/audit (X-Internal-Api-Key) ─┘
+```
+
+* **What is recorded:** sign-ins (including failed ones), registration, profile and password changes, and
+  customer lock/unlock (auth). Account opening and freeze/unfreeze/close (accounts). Transfers, teller deposits,
+  payee changes and reconciliation outcomes (transactions, actor role `SYSTEM` for reconciliation).
+* **Never recorded:** successful reads (page views, searches, `GET` requests), request bodies, and any part of a
+  password. Failed sign-ins record the email that was tried and why: `Unknown email`, `Wrong password`,
+  `Profile is locked`, or the fields that failed validation.
+* **Auditing never breaks the action.** account-service and transaction-service send events in the background
+  with a 2 second timeout. If auth-service is down or slow, the action still succeeds and the service logs
+  `AUDIT WRITE FAILED`. That event is lost, and only the log line remains.
 * Write endpoints carry `@Audited`. Each service's `AuditCoverageTest` fails if a `POST`/`PUT`/`PATCH`/`DELETE`
-  handler under `/api` does not have it.
-* `/internal/**` calls are audited by the calling service. Reconciliation writes `RECONCILE` rows with actor
-  role `SYSTEM`. Requests the gateway rejects (missing token, non-admin on `/api/admin/**`) never reach a service
-  and are not recorded.
-* Admins read the log through `GET /api/admin/audit/{auth|accounts|transactions}` (filters: `action`, `outcome`,
-  `actorId`, `targetId`, `q`, `from`, `to`) or the **Audit log** page in the admin console.
+  handler under `/api` lacks it, or if a read has it. Requests the gateway rejects (missing token, non-admin on
+  `/api/admin/**`) never reach a service and are not recorded.
+* **Reading it:** `GET /api/admin/audit` (admin only), with filters `action`, `actor` (user id or part of an
+  email), `from` and `to` (ISO instants), `service`, `outcome`, `targetId` and `q`, plus `page` and `size`.
+  Or use the **Audit log** page in the admin console.
 
-Existing databases need `db2/migrations/002-audit-log.sql` before the new services are deployed.
+Existing databases need `db2/migrations/003-central-audit-log.sql` before the new services are deployed. It works
+whether or not `002-audit-log.sql` was applied (see the comments in the script).
 
 ## Environments
 
@@ -159,7 +171,7 @@ move Db2 to a managed IBM Db2 offering; replace the shared JWT secret with RS256
 
 ## API testing
 
-`api/postman/` has the collection (49 requests with tests) and environments for local, dev and
+`api/postman/` has the collection (52 requests with tests) and environments for local, dev and
 preprod. It imports into Hoppscotch too. Details in `docs/intellij-and-claude-code.md`.
 
 ## IDE and Claude Code

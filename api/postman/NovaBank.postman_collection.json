@@ -2148,15 +2148,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/audit/auth?action=LOGIN&outcome=FAILURE&size=50",
+              "raw": "{{baseUrl}}/api/admin/audit?action=LOGIN&outcome=FAILURE&size=50",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "admin",
-                "audit",
-                "auth"
+                "audit"
               ],
               "query": [
                 {
@@ -2196,6 +2195,7 @@
                   "    const row = rows.find(r => r.actorEmail === pm.variables.get(\"customerEmail\") && r.reason === \"Wrong password\");",
                   "    pm.expect(row, \"audit row\").to.exist;",
                   "    pm.expect(row.httpStatus).to.eql(401);",
+                  "    pm.expect(row.service).to.eql(\"auth\");",
                   "});",
                   "pm.test(\"the locked-profile attempt is recorded\", () => pm.expect(rows.some(r => r.reason === \"Profile is locked\")).to.be.true);",
                   "pm.test(\"no part of the tried password is stored\", () => {",
@@ -2208,20 +2208,19 @@
           ]
         },
         {
-          "name": "Admin changes to customers",
+          "name": "Customer lock and unlock",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/audit/auth?action=USER_STATUS_CHANGE",
+              "raw": "{{baseUrl}}/api/admin/audit?action=USER_STATUS_CHANGE",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "admin",
-                "audit",
-                "auth"
+                "audit"
               ],
               "query": [
                 {
@@ -2248,8 +2247,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().content;",
                   "pm.test(\"lock and unlock are recorded with old and new status\", () => {",
-                  "    const rows = pm.response.json().content;",
                   "    pm.expect(rows.some(r => r.details.to === \"LOCKED\")).to.be.true;",
                   "    pm.expect(rows.some(r => r.details.to === \"ACTIVE\")).to.be.true;",
                   "});"
@@ -2259,20 +2258,25 @@
           ]
         },
         {
-          "name": "Account changes",
+          "name": "Account freeze and unfreeze (reported by account-service)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/audit/accounts",
+              "raw": "{{baseUrl}}/api/admin/audit?action=ACCOUNT_STATUS_CHANGE",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "admin",
-                "audit",
-                "accounts"
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "ACCOUNT_STATUS_CHANGE"
+                }
               ]
             },
             "auth": {
@@ -2293,10 +2297,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"reads are not recorded, only changes\", () => {",
-                  "    const actions = pm.response.json().content.map(r => r.action);",
-                  "    pm.expect(actions).to.include(\"ACCOUNT_STATUS_CHANGE\");",
-                  "    actions.forEach(a => pm.expect([\"ACCOUNT_OPEN\", \"ACCOUNT_STATUS_CHANGE\"]).to.include(a));",
+                  "const rows = pm.response.json().content;",
+                  "pm.test(\"recorded centrally by account-service\", () => {",
+                  "    pm.expect(rows.some(r => r.service === \"accounts\" && r.details.to === \"FROZEN\")).to.be.true;",
+                  "    pm.expect(rows.some(r => r.service === \"accounts\" && r.details.to === \"ACTIVE\")).to.be.true;",
                   "});"
                 ]
               }
@@ -2304,25 +2308,28 @@
           ]
         },
         {
-          "name": "Money movement and payee changes",
+          "name": "Admin open account (reported by account-service)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/audit/transactions?size=50",
+              "raw": "{{baseUrl}}/api/admin/audit?action=ACCOUNT_OPEN&actor={{adminEmail}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "admin",
-                "audit",
-                "transactions"
+                "audit"
               ],
               "query": [
                 {
-                  "key": "size",
-                  "value": "50"
+                  "key": "action",
+                  "value": "ACCOUNT_OPEN"
+                },
+                {
+                  "key": "actor",
+                  "value": "{{adminEmail}}"
                 }
               ]
             },
@@ -2344,10 +2351,132 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"transfers and payee changes are recorded\", () => {",
-                  "    const actions = pm.response.json().content.map(r => r.action);",
-                  "    pm.expect(actions).to.include(\"TRANSFER\");",
-                  "    pm.expect(actions).to.include(\"BENEFICIARY_ADD\");",
+                  "const rows = pm.response.json().content;",
+                  "pm.test(\"the admin-opened account is recorded\", () => pm.expect(rows.some(r => r.service === \"accounts\" && r.actorRole === \"ADMIN\")).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Teller deposit (reported by transaction-service)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit?action=DEPOSIT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "DEPOSIT"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().content;",
+                  "pm.test(\"the deposit is recorded with its reference and amount\", () => {",
+                  "    const row = rows.find(r => r.service === \"transactions\" && r.outcome === \"SUCCESS\");",
+                  "    pm.expect(row, \"audit row\").to.exist;",
+                  "    pm.expect(row.targetType).to.eql(\"TRANSACTION\");",
+                  "    pm.expect(row.details.amount).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter by actor and date range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit?actor={{adminEmail}}&from={{auditFrom}}&to={{auditTo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "actor",
+                  "value": "{{adminEmail}}"
+                },
+                {
+                  "key": "from",
+                  "value": "{{auditFrom}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{auditTo}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const now = Date.now();",
+                  "pm.variables.set(\"auditFrom\", new Date(now - 60 * 60 * 1000).toISOString());",
+                  "pm.variables.set(\"auditTo\", new Date(now + 60 * 1000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().content;",
+                  "pm.test(\"only rows by that actor, inside the range\", () => {",
+                  "    const from = Date.parse(pm.variables.get(\"auditFrom\")), to = Date.parse(pm.variables.get(\"auditTo\"));",
+                  "    pm.expect(rows.length).to.be.above(0);",
+                  "    rows.forEach(r => {",
+                  "        pm.expect(r.actorEmail).to.include(pm.variables.get(\"adminEmail\"));",
+                  "        pm.expect(Date.parse(r.createdAt)).to.be.within(from, to);",
+                  "    });",
                   "});"
                 ]
               }
@@ -2360,15 +2489,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/admin/audit/auth",
+              "raw": "{{baseUrl}}/api/admin/audit",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "admin",
-                "audit",
-                "auth"
+                "audit"
               ]
             },
             "auth": {
@@ -2389,6 +2517,46 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Internal audit endpoint is not exposed by the gateway (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/internal/audit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "internal",
+                "audit"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service\": \"accounts\",\n  \"action\": \"ACCOUNT_STATUS_CHANGE\",\n  \"outcome\": \"SUCCESS\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 401\", () => pm.response.to.have.status(401));"
                 ]
               }
             }
