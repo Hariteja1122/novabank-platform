@@ -10,6 +10,8 @@ localResources:
     - ../NovaBank-local.postman_environment.json
     - ../NovaBank-preprod.postman_environment.json
 
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
 cloudResources:
   collections:
     ../postman/collections/NovaBank API: 9c79e243-e45f-4444-98ff-616f010bb3af
