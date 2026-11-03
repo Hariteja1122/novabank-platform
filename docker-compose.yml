@@ -60,6 +60,7 @@ services:
     environment:
       <<: *service-env
       PORT: "8082"
+      AUTH_SERVICE_URL: http://auth-service:8081
     ports: ["8082:8082"]
     depends_on:
       db2: { condition: service_healthy }
@@ -89,6 +90,7 @@ services:
       <<: *service-env
       PORT: "8083"
       ACCOUNT_SERVICE_URL: http://account-service:8082
+      AUTH_SERVICE_URL: http://auth-service:8081
     ports: ["8083:8083"]
     depends_on:
       db2: { condition: service_healthy }
