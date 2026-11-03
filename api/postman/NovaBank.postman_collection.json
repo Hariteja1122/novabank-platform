@@ -179,7 +179,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"wrong\"\n}",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"NotMyPassword#42\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2132,6 +2132,263 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Audit log",
+      "item": [
+        {
+          "name": "Failed sign-ins (email and reason, never the password)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit/auth?action=LOGIN&outcome=FAILURE&size=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "auth"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "LOGIN"
+                },
+                {
+                  "key": "outcome",
+                  "value": "FAILURE"
+                },
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().content;",
+                  "pm.test(\"the wrong-password attempt is recorded with the email tried\", () => {",
+                  "    const row = rows.find(r => r.actorEmail === pm.variables.get(\"customerEmail\") && r.reason === \"Wrong password\");",
+                  "    pm.expect(row, \"audit row\").to.exist;",
+                  "    pm.expect(row.httpStatus).to.eql(401);",
+                  "});",
+                  "pm.test(\"the locked-profile attempt is recorded\", () => pm.expect(rows.some(r => r.reason === \"Profile is locked\")).to.be.true);",
+                  "pm.test(\"no part of the tried password is stored\", () => {",
+                  "    pm.expect(pm.response.text()).to.not.include(\"NotMyPassword\");",
+                  "    pm.expect(pm.response.text()).to.not.include(\"#42\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin changes to customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit/auth?action=USER_STATUS_CHANGE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "auth"
+              ],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "USER_STATUS_CHANGE"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"lock and unlock are recorded with old and new status\", () => {",
+                  "    const rows = pm.response.json().content;",
+                  "    pm.expect(rows.some(r => r.details.to === \"LOCKED\")).to.be.true;",
+                  "    pm.expect(rows.some(r => r.details.to === \"ACTIVE\")).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Account changes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "accounts"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"reads are not recorded, only changes\", () => {",
+                  "    const actions = pm.response.json().content.map(r => r.action);",
+                  "    pm.expect(actions).to.include(\"ACCOUNT_STATUS_CHANGE\");",
+                  "    actions.forEach(a => pm.expect([\"ACCOUNT_OPEN\", \"ACCOUNT_STATUS_CHANGE\"]).to.include(a));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Money movement and payee changes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit/transactions?size=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"transfers and payee changes are recorded\", () => {",
+                  "    const actions = pm.response.json().content.map(r => r.action);",
+                  "    pm.expect(actions).to.include(\"TRANSFER\");",
+                  "    pm.expect(actions).to.include(\"BENEFICIARY_ADD\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Customer token on audit log (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/audit/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "auth"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 403\", () => pm.response.to.have.status(403));"
                 ]
               }
             }
