@@ -139,7 +139,7 @@ move Db2 to a managed IBM Db2 offering; replace the shared JWT secret with RS256
 
 ## API testing
 
-`api/postman/` has the collection (33 requests with tests) and environments for local, dev and
+`api/postman/` has the collection (44 requests with tests) and environments for local, dev and
 preprod. It imports into Hoppscotch too. Details in `docs/intellij-and-claude-code.md`.
 
 ## IDE and Claude Code
@@ -150,7 +150,8 @@ plan through the JetBrains plugin.
 
 ## Known gaps worth building next
 
-* A reconciliation job for transfers left `PENDING` when account-service was unreachable.
+* Run transaction-service's reconciliation on Cloud Run even when idle (it is a `@Scheduled` job, and
+  Cloud Run only gives CPU while serving requests): Cloud Scheduler or `minScale: 1` with CPU always on.
 * Testcontainers integration tests against Db2 (unit tests cover the money logic today).
-* Beneficiaries (saved payees) and scheduled transfers.
+* Scheduled transfers (payees are saved in `NB_TXN.BENEFICIARIES` and can be reused).
 * Audit trail table for admin actions.
